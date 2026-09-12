@@ -35,12 +35,7 @@ Notes:
 import { useEffect } from "react"
 import { Checkbox } from "vscrui"
 
-import {
-	type ProviderSettings,
-	type ModelInfo,
-	type ReasoningEffortWithMinimal,
-	reasoningEfforts,
-} from "@roo-code/types"
+import { type ProviderSettings, type ModelInfo, type ReasoningEffortExtended, reasoningEfforts } from "@roo-code/types"
 
 import {
 	DEFAULT_HYBRID_REASONING_MODEL_MAX_TOKENS,
@@ -78,12 +73,12 @@ export const ThinkingBudget = ({ apiConfiguration, setApiConfigurationField, mod
 
 	// Build available reasoning efforts list from capability
 	const supports = modelInfo?.supportsReasoningEffort
-	const baseAvailableOptions: ReadonlyArray<ReasoningEffortWithMinimal> =
+	const baseAvailableOptions: ReadonlyArray<ReasoningEffortExtended> =
 		supports === true
-			? (reasoningEfforts as readonly ReasoningEffortWithMinimal[])
+			? (reasoningEfforts as readonly ReasoningEffortExtended[])
 			: Array.isArray(supports)
-				? (supports as ReadonlyArray<ReasoningEffortWithMinimal>)
-				: (reasoningEfforts as readonly ReasoningEffortWithMinimal[])
+				? (supports as ReadonlyArray<ReasoningEffortExtended>)
+				: (reasoningEfforts as readonly ReasoningEffortExtended[])
 
 	// "disable" turns off reasoning entirely; "none" is a valid reasoning level.
 	// Both display as "None" in the UI but behave differently.
@@ -91,7 +86,7 @@ export const ThinkingBudget = ({ apiConfiguration, setApiConfigurationField, mod
 	// 1. requiredReasoningEffort is not true, AND
 	// 2. supportsReasoningEffort is boolean true (not an explicit array)
 	// When the model provides an explicit array, respect those exact values.
-	type ReasoningEffortOption = ReasoningEffortWithMinimal | "none" | "disable"
+	type ReasoningEffortOption = ReasoningEffortExtended | "disable"
 	const shouldAutoAddDisable =
 		!modelInfo?.requiredReasoningEffort && supports === true && !baseAvailableOptions.includes("disable" as any)
 	const availableOptions: ReadonlyArray<ReasoningEffortOption> = shouldAutoAddDisable
@@ -100,7 +95,7 @@ export const ThinkingBudget = ({ apiConfiguration, setApiConfigurationField, mod
 
 	// Default reasoning effort - use model's default if available
 	// GPT-5 models have "medium" as their default in the model configuration
-	const modelDefaultReasoningEffort = modelInfo?.reasoningEffort as ReasoningEffortWithMinimal | undefined
+	const modelDefaultReasoningEffort = modelInfo?.reasoningEffort as ReasoningEffortExtended | undefined
 	const defaultReasoningEffort: ReasoningEffortOption = modelInfo?.requiredReasoningEffort
 		? modelDefaultReasoningEffort || "medium"
 		: "disable"
@@ -113,7 +108,7 @@ export const ThinkingBudget = ({ apiConfiguration, setApiConfigurationField, mod
 		if (isReasoningEffortSupported && !apiConfiguration.reasoningEffort) {
 			// Only set a default if reasoning is required, otherwise leave as undefined (which maps to "disable")
 			if (modelInfo?.requiredReasoningEffort && defaultReasoningEffort !== "disable") {
-				setApiConfigurationField("reasoningEffort", defaultReasoningEffort as ReasoningEffortWithMinimal, false)
+				setApiConfigurationField("reasoningEffort", defaultReasoningEffort as ReasoningEffortExtended, false)
 			}
 		}
 	}, [
@@ -242,7 +237,7 @@ export const ThinkingBudget = ({ apiConfiguration, setApiConfigurationField, mod
 					} else {
 						// "none", "minimal", "low", "medium", "high" all enable reasoning
 						setApiConfigurationField("enableReasoningEffort", true)
-						setApiConfigurationField("reasoningEffort", value as ReasoningEffortWithMinimal)
+						setApiConfigurationField("reasoningEffort", value as ReasoningEffortExtended)
 					}
 				}}>
 				<SelectTrigger className="w-full">

@@ -1,8 +1,20 @@
 // npx vitest run api/providers/__tests__/openai-codex.spec.ts
 
 import { OpenAiCodexHandler } from "../openai-codex"
+import { OpenAiNativeHandler } from "../openai-native"
 
 describe("OpenAiCodexHandler.getModel", () => {
+	it.each(["disable", "none", "minimal"] as const)(
+		"uses the required GPT-6 default for %s reasoning",
+		(reasoningEffort) => {
+			const codexHandler = new OpenAiCodexHandler({ apiModelId: "gpt-6.1-sol", reasoningEffort })
+			const nativeHandler = new OpenAiNativeHandler({ apiModelId: "gpt-6.1-sol", reasoningEffort })
+
+			expect(codexHandler["getReasoningEffort"](codexHandler.getModel())).toBe("low")
+			expect(nativeHandler["getReasoningEffort"](nativeHandler.getModel())).toBe("medium")
+		},
+	)
+
 	it.each(["gpt-5.1", "gpt-5", "gpt-5.1-codex", "gpt-5-codex", "gpt-5-codex-mini", "gpt-5.3-codex-spark"])(
 		"should return specified model when a valid model id is provided: %s",
 		(apiModelId) => {

@@ -1321,7 +1321,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		const state = provider ? await provider.getState() : undefined
 		let approval = await checkAutoApproval({ state, ask: type, text, isProtected })
 
-		if (type === "command" && partial === undefined && approval.decision === "ask") {
+		if (type === "command" && approval.decision === "ask") {
 			const review = await this.reviewCommandApproval(text ?? "", state)
 
 			if (review) {

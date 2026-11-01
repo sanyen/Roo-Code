@@ -95,6 +95,10 @@ export const globalSettingsSchema = z.object({
 	customCondensingPrompt: z.string().optional(),
 
 	autoApprovalEnabled: z.boolean().optional(),
+	llmCommandApprovalEnabled: z.boolean().optional(),
+	llmCommandApprovalProfileId: z.string().optional(),
+	llmCommandApprovalAutoApprove: z.boolean().optional(),
+	llmCommandApprovalInstructions: z.string().optional(),
 	alwaysAllowReadOnly: z.boolean().optional(),
 	alwaysAllowReadOnlyOutsideWorkspace: z.boolean().optional(),
 	alwaysAllowWrite: z.boolean().optional(),

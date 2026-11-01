@@ -8,6 +8,13 @@
 	},
 	"toolRepetitionLimitReached": "Roo appears to be stuck in a loop, attempting the same action ({{toolName}}) repeatedly. This might indicate a problem with its current strategy. Consider rephrasing the task, providing more specific instructions, or guiding it towards a different approach.",
 	"unknownToolError": "Roo tried to use an unknown tool: \"{{toolName}}\". Retrying...",
+	"commandReview": {
+		"result": "AI command review{{decisionLabel}}: {{explanation}}",
+		"denied": "The AI reviewer denied this command. Review the explanation and choose a safer alternative.",
+		"failed": "AI command review failed. The command still requires your approval. {{message}}",
+		"profileRequired": "Select an API profile for AI command review.",
+		"profileUnavailable": "The selected AI command review profile is unavailable."
+	},
 	"codebaseSearch": {
 		"approval": "Searching for '{{query}}' in codebase..."
 	},

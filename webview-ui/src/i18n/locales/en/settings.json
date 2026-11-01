@@ -329,6 +329,17 @@
 			"addButton": "Add",
 			"autoDenied": "Commands with the prefix `{{prefix}}` have been forbidden by the user. Do not bypass this restriction by running another command."
 		},
+		"llm": {
+			"title": "AI Command Review",
+			"enabled": "Explain commands with an AI profile",
+			"description": "Sends commands that require approval (including any sensitive arguments) to the selected API provider, which may incur costs or delay approval. The reviewer's explanation is shown in chat; commands still require your approval unless AI approval is separately enabled.",
+			"profile": "Review API profile",
+			"noProfile": "Select an API profile",
+			"autoApprove": "Let AI approve or deny commands",
+			"autoApproveDescription": "When enabled, an AI decision can approve a command for execution or deny it. If the review fails or is invalid, the command will still require your approval. Use with care.",
+			"instructions": "Review instructions",
+			"instructionsPlaceholder": "For example: deny commands that install packages or modify files outside the workspace."
+		},
 		"apiRequestLimit": {
 			"title": "Max Count",
 			"unlimited": "Unlimited"

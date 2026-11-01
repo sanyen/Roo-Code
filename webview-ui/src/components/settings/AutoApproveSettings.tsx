@@ -2,11 +2,12 @@ import { HTMLAttributes, useState } from "react"
 import { X } from "lucide-react"
 import { Trans } from "react-i18next"
 import { Package } from "@roo/package"
+import type { ProviderSettingsEntry } from "@roo-code/types"
 
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 import { vscode } from "@/utils/vscode"
-import { Button, Input, Slider } from "@/components/ui"
+import { Button, Input, SearchableSelect, Slider } from "@/components/ui"
 import { Textarea } from "@/components/ui/textarea"
 
 import { SetCachedStateField } from "./types"
@@ -36,6 +37,11 @@ type AutoApproveSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	allowedMaxCost?: number | undefined
 	deniedCommands?: string[]
 	deniedCommandMessages?: Record<string, string>
+	llmCommandApprovalEnabled?: boolean
+	llmCommandApprovalProfileId?: string
+	llmCommandApprovalAutoApprove?: boolean
+	llmCommandApprovalInstructions?: string
+	listApiConfigMeta?: ProviderSettingsEntry[]
 	setCachedStateField: SetCachedStateField<
 		| "alwaysAllowReadOnly"
 		| "alwaysAllowReadOnlyOutsideWorkspace"
@@ -53,6 +59,10 @@ type AutoApproveSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "allowedMaxCost"
 		| "deniedCommands"
 		| "deniedCommandMessages"
+		| "llmCommandApprovalEnabled"
+		| "llmCommandApprovalProfileId"
+		| "llmCommandApprovalAutoApprove"
+		| "llmCommandApprovalInstructions"
 	>
 }
 
@@ -73,6 +83,11 @@ export const AutoApproveSettings = ({
 	allowedMaxCost,
 	deniedCommands,
 	deniedCommandMessages,
+	llmCommandApprovalEnabled,
+	llmCommandApprovalProfileId,
+	llmCommandApprovalAutoApprove,
+	llmCommandApprovalInstructions,
+	listApiConfigMeta = [],
 	setCachedStateField,
 	...props
 }: AutoApproveSettingsProps) => {
@@ -176,6 +191,84 @@ export const AutoApproveSettings = ({
 						alwaysAllowFollowupQuestions={alwaysAllowFollowupQuestions}
 						onToggle={(key, value) => setCachedStateField(key, value)}
 					/>
+
+					<div className="flex flex-col gap-3 border-t border-vscode-panel-border pt-4">
+						<div className="text-sm font-bold">{t("settings:autoApprove.llm.title")}</div>
+						<SearchableSetting
+							settingId="llm-command-review-enabled"
+							section="autoApprove"
+							label={t("settings:autoApprove.llm.enabled")}>
+							<VSCodeCheckbox
+								checked={llmCommandApprovalEnabled ?? false}
+								onChange={(event: any) =>
+									setCachedStateField("llmCommandApprovalEnabled", event.target.checked)
+								}>
+								<span className="font-medium">{t("settings:autoApprove.llm.enabled")}</span>
+							</VSCodeCheckbox>
+							<p className="text-vscode-descriptionForeground text-sm mt-1">
+								{t("settings:autoApprove.llm.description")}
+							</p>
+						</SearchableSetting>
+
+						<SearchableSetting
+							settingId="llm-command-review-profile"
+							section="autoApprove"
+							label={t("settings:autoApprove.llm.profile")}>
+							<label className="block font-medium mb-1">{t("settings:autoApprove.llm.profile")}</label>
+							<SearchableSelect
+								value={llmCommandApprovalProfileId ?? ""}
+								onValueChange={(value) => setCachedStateField("llmCommandApprovalProfileId", value)}
+								options={[
+									{ value: "", label: t("settings:autoApprove.llm.noProfile") },
+									...listApiConfigMeta
+										.filter((profile) => profile.id)
+										.map((profile) => ({
+											value: profile.id,
+											label: profile.name,
+										})),
+								]}
+								placeholder={t("settings:common.select")}
+								searchPlaceholder={t("settings:providers.searchPlaceholder")}
+								emptyMessage={t("settings:providers.noMatchFound")}
+								className="w-full"
+							/>
+						</SearchableSetting>
+
+						<SearchableSetting
+							settingId="llm-command-review-auto-approve"
+							section="autoApprove"
+							label={t("settings:autoApprove.llm.autoApprove")}>
+							<VSCodeCheckbox
+								checked={llmCommandApprovalAutoApprove ?? false}
+								disabled={!llmCommandApprovalEnabled}
+								onChange={(event: any) =>
+									setCachedStateField("llmCommandApprovalAutoApprove", event.target.checked)
+								}>
+								<span className="font-medium">{t("settings:autoApprove.llm.autoApprove")}</span>
+							</VSCodeCheckbox>
+							<p className="text-vscode-descriptionForeground text-sm mt-1">
+								{t("settings:autoApprove.llm.autoApproveDescription")}
+							</p>
+						</SearchableSetting>
+
+						<SearchableSetting
+							settingId="llm-command-review-instructions"
+							section="autoApprove"
+							label={t("settings:autoApprove.llm.instructions")}>
+							<label className="block font-medium mb-1" htmlFor="llm-command-review-instructions">
+								{t("settings:autoApprove.llm.instructions")}
+							</label>
+							<Textarea
+								id="llm-command-review-instructions"
+								value={llmCommandApprovalInstructions ?? ""}
+								rows={4}
+								placeholder={t("settings:autoApprove.llm.instructionsPlaceholder")}
+								onChange={(event) =>
+									setCachedStateField("llmCommandApprovalInstructions", event.target.value)
+								}
+							/>
+						</SearchableSetting>
+					</div>
 
 					<MaxLimitInputs
 						allowedMaxRequests={allowedMaxRequests}

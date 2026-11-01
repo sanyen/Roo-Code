@@ -153,6 +153,10 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		deniedCommandMessages,
 		allowedMaxRequests,
 		allowedMaxCost,
+		llmCommandApprovalEnabled,
+		llmCommandApprovalProfileId,
+		llmCommandApprovalAutoApprove,
+		llmCommandApprovalInstructions,
 		language,
 		alwaysAllowExecute,
 		alwaysAllowMcp,
@@ -358,6 +362,10 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					alwaysAllowWriteOutsideWorkspace: alwaysAllowWriteOutsideWorkspace ?? undefined,
 					alwaysAllowWriteProtected: alwaysAllowWriteProtected ?? undefined,
 					alwaysAllowExecute: alwaysAllowExecute ?? undefined,
+					llmCommandApprovalEnabled: llmCommandApprovalEnabled ?? false,
+					llmCommandApprovalProfileId: llmCommandApprovalProfileId ?? "",
+					llmCommandApprovalAutoApprove: llmCommandApprovalAutoApprove ?? false,
+					llmCommandApprovalInstructions: llmCommandApprovalInstructions ?? "",
 					alwaysAllowMcp,
 					alwaysAllowModeSwitch,
 					allowedCommands: allowedCommands ?? [],
@@ -784,6 +792,11 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 								allowedMaxCost={allowedMaxCost ?? undefined}
 								deniedCommands={deniedCommands}
 								deniedCommandMessages={deniedCommandMessages}
+								llmCommandApprovalEnabled={llmCommandApprovalEnabled}
+								llmCommandApprovalProfileId={llmCommandApprovalProfileId}
+								llmCommandApprovalAutoApprove={llmCommandApprovalAutoApprove}
+								llmCommandApprovalInstructions={llmCommandApprovalInstructions}
+								listApiConfigMeta={listApiConfigMeta}
 								setCachedStateField={setCachedStateField}
 							/>
 						)}

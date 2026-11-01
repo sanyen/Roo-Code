@@ -1323,7 +1323,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		if (approval.decision === "approve") {
 			this.approveAsk()
 		} else if (approval.decision === "deny") {
-			this.denyAsk()
+			this.denyAsk({ text: approval.text })
 		} else if (approval.decision === "timeout") {
 			// Store the auto-approval timeout so it can be cancelled if user interacts
 			this.autoApprovalTimeoutRef = setTimeout(() => {

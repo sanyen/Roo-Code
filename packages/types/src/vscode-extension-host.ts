@@ -246,6 +246,7 @@ export type ExtensionState = Pick<
 	| "followupAutoApproveTimeoutMs"
 	| "allowedCommands"
 	| "deniedCommands"
+	| "deniedCommandMessages"
 	| "allowedMaxRequests"
 	| "allowedMaxCost"
 	| "ttsEnabled"

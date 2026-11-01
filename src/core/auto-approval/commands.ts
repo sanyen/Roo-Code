@@ -206,6 +206,12 @@ export function isAutoDeniedSingleCommand(
  */
 export type CommandDecision = "auto_approve" | "auto_deny" | "ask_user"
 
+export type CommandDecisionDetails = {
+	decision: CommandDecision
+	deniedPrefix?: string
+	denialMessage?: string
+}
+
 /**
  * Unified command validation that implements the longest prefix match rule.
  * Returns a definitive decision for a command based on allowlist and denylist.
@@ -258,38 +264,53 @@ export function getCommandDecision(
 	allowedCommands: string[],
 	deniedCommands?: string[],
 ): CommandDecision {
+	return getCommandDecisionDetails(command, allowedCommands, deniedCommands).decision
+}
+
+export function getCommandDecisionDetails(
+	command: string,
+	allowedCommands: string[],
+	deniedCommands?: string[],
+	deniedCommandMessages?: Record<string, string>,
+): CommandDecisionDetails {
 	if (!command?.trim()) {
-		return "auto_approve"
+		return { decision: "auto_approve" }
 	}
 
 	// Parse into sub-commands (split by &&, ||, ;, |)
 	const subCommands = parseCommand(command)
 
 	// Check each sub-command and collect decisions
-	const decisions: CommandDecision[] = subCommands.map((cmd) => {
+	const decisions: CommandDecisionDetails[] = subCommands.map((cmd) => {
 		// Remove simple PowerShell-like redirections (e.g. 2>&1) before checking
 		const cmdWithoutRedirection = cmd.replace(/\d*>&\d*/, "").trim()
 
-		return getSingleCommandDecision(cmdWithoutRedirection, allowedCommands, deniedCommands)
+		return getSingleCommandDecisionDetails(cmdWithoutRedirection, allowedCommands, deniedCommands)
 	})
 
 	// If any sub-command is denied, deny the whole command
-	if (decisions.includes("auto_deny")) {
-		return "auto_deny"
+	const deniedDecision = decisions.find(({ decision }) => decision === "auto_deny")
+	if (deniedDecision) {
+		const normalizedPrefix = deniedDecision.deniedPrefix?.toLowerCase()
+		const denialMessage = Object.entries(deniedCommandMessages ?? {})
+			.find(([prefix]) => prefix.toLowerCase() === normalizedPrefix)?.[1]
+			?.trim()
+
+		return { ...deniedDecision, denialMessage: denialMessage || undefined }
 	}
 
 	// Require explicit user approval for dangerous patterns
 	if (containsDangerousSubstitution(command)) {
-		return "ask_user"
+		return { decision: "ask_user" }
 	}
 
 	// If all sub-commands are approved, approve the whole command
-	if (decisions.every((decision) => decision === "auto_approve")) {
-		return "auto_approve"
+	if (decisions.every(({ decision }) => decision === "auto_approve")) {
+		return { decision: "auto_approve" }
 	}
 
 	// Otherwise, ask user
-	return "ask_user"
+	return { decision: "ask_user" }
 }
 
 /**
@@ -342,7 +363,15 @@ export function getSingleCommandDecision(
 	allowedCommands: string[],
 	deniedCommands?: string[],
 ): CommandDecision {
-	if (!command) return "auto_approve"
+	return getSingleCommandDecisionDetails(command, allowedCommands, deniedCommands).decision
+}
+
+function getSingleCommandDecisionDetails(
+	command: string,
+	allowedCommands: string[],
+	deniedCommands?: string[],
+): CommandDecisionDetails {
+	if (!command) return { decision: "auto_approve" }
 
 	// Find longest matching prefixes in both lists
 	const longestAllowedMatch = findLongestPrefixMatch(command, allowedCommands || [])
@@ -350,19 +379,21 @@ export function getSingleCommandDecision(
 
 	// If only allowlist has a match, auto-approve
 	if (longestAllowedMatch && !longestDeniedMatch) {
-		return "auto_approve"
+		return { decision: "auto_approve" }
 	}
 
 	// If only denylist has a match, auto-deny
 	if (!longestAllowedMatch && longestDeniedMatch) {
-		return "auto_deny"
+		return { decision: "auto_deny", deniedPrefix: longestDeniedMatch }
 	}
 
 	// Both lists have matches - apply longest prefix match rule
 	if (longestAllowedMatch && longestDeniedMatch) {
-		return longestAllowedMatch.length > longestDeniedMatch.length ? "auto_approve" : "auto_deny"
+		return longestAllowedMatch.length > longestDeniedMatch.length
+			? { decision: "auto_approve" }
+			: { decision: "auto_deny", deniedPrefix: longestDeniedMatch }
 	}
 
 	// If neither list has a match, ask user
-	return "ask_user"
+	return { decision: "ask_user" }
 }

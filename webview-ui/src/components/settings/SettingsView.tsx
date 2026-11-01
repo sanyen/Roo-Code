@@ -150,6 +150,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		alwaysAllowReadOnlyOutsideWorkspace,
 		allowedCommands,
 		deniedCommands,
+		deniedCommandMessages,
 		allowedMaxRequests,
 		allowedMaxCost,
 		language,
@@ -361,6 +362,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					alwaysAllowModeSwitch,
 					allowedCommands: allowedCommands ?? [],
 					deniedCommands: deniedCommands ?? [],
+					deniedCommandMessages: deniedCommandMessages ?? {},
 					// Note that we use `null` instead of `undefined` since `JSON.stringify`
 					// will omit `undefined` when serializing the object and passing it to the
 					// extension host. We may need to do the same for other nullable fields.
@@ -781,6 +783,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 								allowedMaxRequests={allowedMaxRequests ?? undefined}
 								allowedMaxCost={allowedMaxCost ?? undefined}
 								deniedCommands={deniedCommands}
+								deniedCommandMessages={deniedCommandMessages}
 								setCachedStateField={setCachedStateField}
 							/>
 						)}

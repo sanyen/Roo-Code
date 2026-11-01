@@ -7,6 +7,7 @@ import { useAppTranslation } from "@/i18n/TranslationContext"
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 import { vscode } from "@/utils/vscode"
 import { Button, Input, Slider } from "@/components/ui"
+import { Textarea } from "@/components/ui/textarea"
 
 import { SetCachedStateField } from "./types"
 import { SectionHeader } from "./SectionHeader"
@@ -34,6 +35,7 @@ type AutoApproveSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	allowedMaxRequests?: number | undefined
 	allowedMaxCost?: number | undefined
 	deniedCommands?: string[]
+	deniedCommandMessages?: Record<string, string>
 	setCachedStateField: SetCachedStateField<
 		| "alwaysAllowReadOnly"
 		| "alwaysAllowReadOnlyOutsideWorkspace"
@@ -50,6 +52,7 @@ type AutoApproveSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "allowedMaxRequests"
 		| "allowedMaxCost"
 		| "deniedCommands"
+		| "deniedCommandMessages"
 	>
 }
 
@@ -69,6 +72,7 @@ export const AutoApproveSettings = ({
 	allowedMaxRequests,
 	allowedMaxCost,
 	deniedCommands,
+	deniedCommandMessages,
 	setCachedStateField,
 	...props
 }: AutoApproveSettingsProps) => {
@@ -101,6 +105,19 @@ export const AutoApproveSettings = ({
 			setDeniedCommandInput("")
 			vscode.postMessage({ type: "updateSettings", updatedSettings: { deniedCommands: newCommands } })
 		}
+	}
+
+	const handleDeniedCommandMessageChange = (command: string, message: string) => {
+		const newMessages = { ...(deniedCommandMessages ?? {}) }
+
+		if (message.trim()) {
+			newMessages[command] = message
+		} else {
+			delete newMessages[command]
+		}
+
+		setCachedStateField("deniedCommandMessages", newMessages)
+		vscode.postMessage({ type: "updateSettings", updatedSettings: { deniedCommandMessages: newMessages } })
 	}
 
 	return (
@@ -367,26 +384,48 @@ export const AutoApproveSettings = ({
 							</Button>
 						</div>
 
-						<div className="flex flex-wrap gap-2">
+						<div className="flex flex-col gap-3">
 							{(deniedCommands ?? []).map((cmd, index) => (
-								<Button
-									key={index}
-									variant="secondary"
-									data-testid={`remove-denied-command-${index}`}
-									onClick={() => {
-										const newCommands = (deniedCommands ?? []).filter((_, i) => i !== index)
-										setCachedStateField("deniedCommands", newCommands)
-
-										vscode.postMessage({
-											type: "updateSettings",
-											updatedSettings: { deniedCommands: newCommands },
-										})
-									}}>
-									<div className="flex flex-row items-center gap-1">
-										<div>{cmd}</div>
-										<X className="text-foreground scale-75" />
+								<div key={cmd} className="flex flex-col gap-2">
+									<div className="flex items-center gap-2">
+										<span className="font-medium">{cmd}</span>
+										<Button
+											variant="secondary"
+											data-testid={`remove-denied-command-${index}`}
+											title={t("settings:autoApprove.execute.removeButton")}
+											aria-label={`${t("settings:autoApprove.execute.removeButton")} ${cmd}`}
+											onClick={() => {
+												const newCommands = (deniedCommands ?? []).filter((_, i) => i !== index)
+												const newMessages = { ...(deniedCommandMessages ?? {}) }
+												delete newMessages[cmd]
+												setCachedStateField("deniedCommands", newCommands)
+												setCachedStateField("deniedCommandMessages", newMessages)
+												vscode.postMessage({
+													type: "updateSettings",
+													updatedSettings: {
+														deniedCommands: newCommands,
+														deniedCommandMessages: newMessages,
+													},
+												})
+											}}>
+											<X className="text-foreground scale-75" />
+										</Button>
 									</div>
-								</Button>
+									<label
+										className="text-sm text-vscode-descriptionForeground"
+										htmlFor={`denied-command-message-${index}`}>
+										{t("settings:autoApprove.execute.deniedCommandMessageLabel")}
+									</label>
+									<Textarea
+										id={`denied-command-message-${index}`}
+										value={deniedCommandMessages?.[cmd] ?? ""}
+										rows={2}
+										placeholder={t("settings:autoApprove.execute.deniedCommandMessagePlaceholder")}
+										aria-label={`${t("settings:autoApprove.execute.deniedCommandMessageLabel")} ${cmd}`}
+										data-testid={`denied-command-message-${index}`}
+										onChange={(event) => handleDeniedCommandMessageChange(cmd, event.target.value)}
+									/>
+								</div>
 							))}
 						</div>
 					</div>

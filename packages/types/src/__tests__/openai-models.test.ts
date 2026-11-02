@@ -12,6 +12,12 @@ describe("OpenAI model catalogs", () => {
 			requiredReasoningEffort: true,
 			reasoningEffort: "low",
 		})
+		expect(openAiCodexModels["gpt-6.1-terra"]).toMatchObject({
+			contextWindow: 872000,
+			maxTokens: 128000,
+			supportsReasoningEffort: ["low", "medium", "high", "xhigh", "max"],
+			reasoningEffort: "low",
+		})
 		expect(openAiCodexModels["gpt-6-sol"]).toMatchObject({
 			contextWindow: 872000,
 			supportsReasoningEffort: ["low", "medium", "high", "xhigh", "max"],
@@ -31,6 +37,29 @@ describe("OpenAI model catalogs", () => {
 			cacheWritesPrice: 2.5,
 			cacheReadsPrice: 0.1,
 			requiredReasoningEffort: true,
+		})
+	})
+
+	it("includes GPT-6.1 Terra in the native API catalog with published pricing", () => {
+		expect(openAiNativeModels["gpt-6.1-terra"]).toMatchObject({
+			contextWindow: 1_050_000,
+			maxTokens: 128000,
+			inputPrice: 1,
+			outputPrice: 5,
+			cacheWritesPrice: 1.25,
+			cacheReadsPrice: 0.05,
+			longContextPricing: {
+				thresholdTokens: 272_000,
+				inputPriceMultiplier: 2,
+				outputPriceMultiplier: 1.5,
+			},
+			tiers: [
+				{
+					name: "flex",
+					inputPrice: 0.5,
+					outputPrice: 2.5,
+				},
+			],
 		})
 	})
 })

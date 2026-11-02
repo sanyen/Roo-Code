@@ -1585,6 +1585,7 @@ export const ChatRowContent = ({
 						<CommandExecution
 							executionId={message.ts.toString()}
 							text={message.text}
+							commandReview={message.commandReview}
 							icon={icon}
 							title={title}
 						/>

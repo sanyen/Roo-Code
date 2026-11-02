@@ -323,8 +323,26 @@
 			"deniedCommandsDescription": "Command prefixes that will be automatically denied without asking for approval. In case of conflicts with allowed commands, the longest prefix match takes precedence. Add * to deny all commands.",
 			"commandPlaceholder": "Enter command prefix (e.g., 'git ')",
 			"deniedCommandPlaceholder": "Enter command prefix to deny (e.g., 'rm -rf')",
+			"deniedCommandMessageLabel": "Guidance for blocked commands",
+			"deniedCommandMessagePlaceholder": "Optional guidance for the model when this command is blocked",
+			"removeButton": "Remove",
 			"addButton": "Add",
 			"autoDenied": "Commands with the prefix `{{prefix}}` have been forbidden by the user. Do not bypass this restriction by running another command."
+		},
+		"llm": {
+			"title": "AI Command Review",
+			"enabled": "Explain commands with an AI profile",
+			"description": "Sends commands that require approval (including any sensitive arguments) to the selected API provider, which may incur costs or delay approval. The reviewer's explanation is shown in chat; commands still require your approval unless AI approval is separately enabled.",
+			"profile": "Review API profile",
+			"noProfile": "Select an API profile",
+			"allowDecision": "Let AI approve or deny commands",
+			"allowDecisionDescription": "Ask the AI reviewer for an approval verdict. When neither automatic action is selected, its verdict is shown as a suggestion and you decide whether to run the command.",
+			"autoApprove": "Auto approve",
+			"autoApproveDescription": "Automatically run commands when the AI reviewer recommends approval.",
+			"autoDeny": "Auto deny",
+			"autoDenyDescription": "Automatically block commands when the AI reviewer recommends denial. The reviewer explanation is passed back to the main AI.",
+			"instructions": "Review instructions",
+			"instructionsPlaceholder": "For example: deny commands that install packages or modify files outside the workspace."
 		},
 		"apiRequestLimit": {
 			"title": "Max Count",

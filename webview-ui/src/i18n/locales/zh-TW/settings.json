@@ -268,6 +268,8 @@
 			"allowedCommands": "允許自動執行的命令",
 			"allowedCommandsDescription": "啟用「始終核准執行」時，可自動執行的命令前綴。新增 * 可允許所有命令（請謹慎使用）。",
 			"deniedCommands": "拒絕的命令",
+			"deniedCommandMessageLabel": "{{command}} 的提示訊息",
+			"deniedCommandMessagePlaceholder": "告訴助理此命令遭封鎖的原因，並建議替代方案。",
 			"deniedCommandsDescription": "將自動拒絕且不詢問核准的命令前綴。若與允許的命令衝突，將以最長前綴比對優先。新增 * 可拒絕所有命令。",
 			"commandPlaceholder": "輸入命令前綴（例如 'git '）",
 			"deniedCommandPlaceholder": "輸入要拒絕的命令前綴（例如 'rm -rf'）",

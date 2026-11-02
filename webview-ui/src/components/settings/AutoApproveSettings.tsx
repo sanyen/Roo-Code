@@ -2,11 +2,13 @@ import { HTMLAttributes, useState } from "react"
 import { X } from "lucide-react"
 import { Trans } from "react-i18next"
 import { Package } from "@roo/package"
+import type { ProviderSettingsEntry } from "@roo-code/types"
 
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 import { vscode } from "@/utils/vscode"
-import { Button, Input, Slider } from "@/components/ui"
+import { Button, Input, SearchableSelect, Slider } from "@/components/ui"
+import { Textarea } from "@/components/ui/textarea"
 
 import { SetCachedStateField } from "./types"
 import { SectionHeader } from "./SectionHeader"
@@ -34,6 +36,14 @@ type AutoApproveSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	allowedMaxRequests?: number | undefined
 	allowedMaxCost?: number | undefined
 	deniedCommands?: string[]
+	deniedCommandMessages?: Record<string, string>
+	llmCommandApprovalEnabled?: boolean
+	llmCommandApprovalProfileId?: string
+	llmCommandApprovalAutoApprove?: boolean
+	llmCommandApprovalAutoApproveCommands?: boolean
+	llmCommandApprovalAutoDenyCommands?: boolean
+	llmCommandApprovalInstructions?: string
+	listApiConfigMeta?: ProviderSettingsEntry[]
 	setCachedStateField: SetCachedStateField<
 		| "alwaysAllowReadOnly"
 		| "alwaysAllowReadOnlyOutsideWorkspace"
@@ -50,6 +60,13 @@ type AutoApproveSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "allowedMaxRequests"
 		| "allowedMaxCost"
 		| "deniedCommands"
+		| "deniedCommandMessages"
+		| "llmCommandApprovalEnabled"
+		| "llmCommandApprovalProfileId"
+		| "llmCommandApprovalAutoApprove"
+		| "llmCommandApprovalAutoApproveCommands"
+		| "llmCommandApprovalAutoDenyCommands"
+		| "llmCommandApprovalInstructions"
 	>
 }
 
@@ -69,6 +86,14 @@ export const AutoApproveSettings = ({
 	allowedMaxRequests,
 	allowedMaxCost,
 	deniedCommands,
+	deniedCommandMessages,
+	llmCommandApprovalEnabled,
+	llmCommandApprovalProfileId,
+	llmCommandApprovalAutoApprove,
+	llmCommandApprovalAutoApproveCommands,
+	llmCommandApprovalAutoDenyCommands,
+	llmCommandApprovalInstructions,
+	listApiConfigMeta = [],
 	setCachedStateField,
 	...props
 }: AutoApproveSettingsProps) => {
@@ -101,6 +126,19 @@ export const AutoApproveSettings = ({
 			setDeniedCommandInput("")
 			vscode.postMessage({ type: "updateSettings", updatedSettings: { deniedCommands: newCommands } })
 		}
+	}
+
+	const handleDeniedCommandMessageChange = (command: string, message: string) => {
+		const newMessages = { ...(deniedCommandMessages ?? {}) }
+
+		if (message.trim()) {
+			newMessages[command] = message
+		} else {
+			delete newMessages[command]
+		}
+
+		setCachedStateField("deniedCommandMessages", newMessages)
+		vscode.postMessage({ type: "updateSettings", updatedSettings: { deniedCommandMessages: newMessages } })
 	}
 
 	return (
@@ -159,6 +197,127 @@ export const AutoApproveSettings = ({
 						alwaysAllowFollowupQuestions={alwaysAllowFollowupQuestions}
 						onToggle={(key, value) => setCachedStateField(key, value)}
 					/>
+
+					<div className="flex flex-col gap-3 border-t border-vscode-panel-border pt-4">
+						<div className="text-sm font-bold">{t("settings:autoApprove.llm.title")}</div>
+						<SearchableSetting
+							settingId="llm-command-review-enabled"
+							section="autoApprove"
+							label={t("settings:autoApprove.llm.enabled")}>
+							<VSCodeCheckbox
+								checked={llmCommandApprovalEnabled ?? false}
+								onChange={(event: any) =>
+									setCachedStateField("llmCommandApprovalEnabled", event.target.checked)
+								}>
+								<span className="font-medium">{t("settings:autoApprove.llm.enabled")}</span>
+							</VSCodeCheckbox>
+							<p className="text-vscode-descriptionForeground text-sm mt-1">
+								{t("settings:autoApprove.llm.description")}
+							</p>
+						</SearchableSetting>
+
+						<SearchableSetting
+							settingId="llm-command-review-profile"
+							section="autoApprove"
+							label={t("settings:autoApprove.llm.profile")}>
+							<label className="block font-medium mb-1">{t("settings:autoApprove.llm.profile")}</label>
+							<SearchableSelect
+								value={llmCommandApprovalProfileId ?? ""}
+								onValueChange={(value) => setCachedStateField("llmCommandApprovalProfileId", value)}
+								options={[
+									{ value: "", label: t("settings:autoApprove.llm.noProfile") },
+									...listApiConfigMeta
+										.filter((profile) => profile.id)
+										.map((profile) => ({
+											value: profile.id,
+											label: profile.name,
+										})),
+								]}
+								placeholder={t("settings:common.select")}
+								searchPlaceholder={t("settings:providers.searchPlaceholder")}
+								emptyMessage={t("settings:providers.noMatchFound")}
+								className="w-full"
+							/>
+						</SearchableSetting>
+
+						<SearchableSetting
+							settingId="llm-command-review-approval-enabled"
+							section="autoApprove"
+							label={t("settings:autoApprove.llm.allowDecision")}>
+							<VSCodeCheckbox
+								checked={llmCommandApprovalAutoApprove ?? false}
+								disabled={!llmCommandApprovalEnabled}
+								onChange={(event: any) =>
+									setCachedStateField("llmCommandApprovalAutoApprove", event.target.checked)
+								}>
+								<span className="font-medium">{t("settings:autoApprove.llm.allowDecision")}</span>
+							</VSCodeCheckbox>
+							<p className="text-vscode-descriptionForeground text-sm mt-1">
+								{t("settings:autoApprove.llm.allowDecisionDescription")}
+							</p>
+						</SearchableSetting>
+
+						{llmCommandApprovalAutoApprove && (
+							<div className="ml-3 flex flex-col gap-3 border-l-2 border-vscode-button-background pl-3">
+								<SearchableSetting
+									settingId="llm-command-review-auto-approve"
+									section="autoApprove"
+									label={t("settings:autoApprove.llm.autoApprove")}>
+									<VSCodeCheckbox
+										checked={llmCommandApprovalAutoApproveCommands ?? false}
+										disabled={!llmCommandApprovalEnabled}
+										onChange={(event: any) =>
+											setCachedStateField(
+												"llmCommandApprovalAutoApproveCommands",
+												event.target.checked,
+											)
+										}>
+										<span className="font-medium">{t("settings:autoApprove.llm.autoApprove")}</span>
+									</VSCodeCheckbox>
+									<p className="text-vscode-descriptionForeground text-sm mt-1">
+										{t("settings:autoApprove.llm.autoApproveDescription")}
+									</p>
+								</SearchableSetting>
+								<SearchableSetting
+									settingId="llm-command-review-auto-deny"
+									section="autoApprove"
+									label={t("settings:autoApprove.llm.autoDeny")}>
+									<VSCodeCheckbox
+										checked={llmCommandApprovalAutoDenyCommands ?? false}
+										disabled={!llmCommandApprovalEnabled}
+										onChange={(event: any) =>
+											setCachedStateField(
+												"llmCommandApprovalAutoDenyCommands",
+												event.target.checked,
+											)
+										}>
+										<span className="font-medium">{t("settings:autoApprove.llm.autoDeny")}</span>
+									</VSCodeCheckbox>
+									<p className="text-vscode-descriptionForeground text-sm mt-1">
+										{t("settings:autoApprove.llm.autoDenyDescription")}
+									</p>
+								</SearchableSetting>
+							</div>
+						)}
+
+						<SearchableSetting
+							settingId="llm-command-review-instructions"
+							section="autoApprove"
+							label={t("settings:autoApprove.llm.instructions")}>
+							<label className="block font-medium mb-1" htmlFor="llm-command-review-instructions">
+								{t("settings:autoApprove.llm.instructions")}
+							</label>
+							<Textarea
+								id="llm-command-review-instructions"
+								value={llmCommandApprovalInstructions ?? ""}
+								rows={4}
+								placeholder={t("settings:autoApprove.llm.instructionsPlaceholder")}
+								onChange={(event) =>
+									setCachedStateField("llmCommandApprovalInstructions", event.target.value)
+								}
+							/>
+						</SearchableSetting>
+					</div>
 
 					<MaxLimitInputs
 						allowedMaxRequests={allowedMaxRequests}
@@ -367,26 +526,48 @@ export const AutoApproveSettings = ({
 							</Button>
 						</div>
 
-						<div className="flex flex-wrap gap-2">
+						<div className="flex flex-col gap-3">
 							{(deniedCommands ?? []).map((cmd, index) => (
-								<Button
-									key={index}
-									variant="secondary"
-									data-testid={`remove-denied-command-${index}`}
-									onClick={() => {
-										const newCommands = (deniedCommands ?? []).filter((_, i) => i !== index)
-										setCachedStateField("deniedCommands", newCommands)
-
-										vscode.postMessage({
-											type: "updateSettings",
-											updatedSettings: { deniedCommands: newCommands },
-										})
-									}}>
-									<div className="flex flex-row items-center gap-1">
-										<div>{cmd}</div>
-										<X className="text-foreground scale-75" />
+								<div key={cmd} className="flex flex-col gap-2">
+									<div className="flex items-center gap-2">
+										<span className="font-medium">{cmd}</span>
+										<Button
+											variant="secondary"
+											data-testid={`remove-denied-command-${index}`}
+											title={t("settings:autoApprove.execute.removeButton")}
+											aria-label={`${t("settings:autoApprove.execute.removeButton")} ${cmd}`}
+											onClick={() => {
+												const newCommands = (deniedCommands ?? []).filter((_, i) => i !== index)
+												const newMessages = { ...(deniedCommandMessages ?? {}) }
+												delete newMessages[cmd]
+												setCachedStateField("deniedCommands", newCommands)
+												setCachedStateField("deniedCommandMessages", newMessages)
+												vscode.postMessage({
+													type: "updateSettings",
+													updatedSettings: {
+														deniedCommands: newCommands,
+														deniedCommandMessages: newMessages,
+													},
+												})
+											}}>
+											<X className="text-foreground scale-75" />
+										</Button>
 									</div>
-								</Button>
+									<label
+										className="text-sm text-vscode-descriptionForeground"
+										htmlFor={`denied-command-message-${index}`}>
+										{t("settings:autoApprove.execute.deniedCommandMessageLabel")}
+									</label>
+									<Textarea
+										id={`denied-command-message-${index}`}
+										value={deniedCommandMessages?.[cmd] ?? ""}
+										rows={2}
+										placeholder={t("settings:autoApprove.execute.deniedCommandMessagePlaceholder")}
+										aria-label={`${t("settings:autoApprove.execute.deniedCommandMessageLabel")} ${cmd}`}
+										data-testid={`denied-command-message-${index}`}
+										onChange={(event) => handleDeniedCommandMessageChange(cmd, event.target.value)}
+									/>
+								</div>
 							))}
 						</div>
 					</div>

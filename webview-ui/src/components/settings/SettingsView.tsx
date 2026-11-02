@@ -150,8 +150,15 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		alwaysAllowReadOnlyOutsideWorkspace,
 		allowedCommands,
 		deniedCommands,
+		deniedCommandMessages,
 		allowedMaxRequests,
 		allowedMaxCost,
+		llmCommandApprovalEnabled,
+		llmCommandApprovalProfileId,
+		llmCommandApprovalAutoApprove,
+		llmCommandApprovalAutoApproveCommands,
+		llmCommandApprovalAutoDenyCommands,
+		llmCommandApprovalInstructions,
 		language,
 		alwaysAllowExecute,
 		alwaysAllowMcp,
@@ -357,10 +364,17 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					alwaysAllowWriteOutsideWorkspace: alwaysAllowWriteOutsideWorkspace ?? undefined,
 					alwaysAllowWriteProtected: alwaysAllowWriteProtected ?? undefined,
 					alwaysAllowExecute: alwaysAllowExecute ?? undefined,
+					llmCommandApprovalEnabled: llmCommandApprovalEnabled ?? false,
+					llmCommandApprovalProfileId: llmCommandApprovalProfileId ?? "",
+					llmCommandApprovalAutoApprove: llmCommandApprovalAutoApprove ?? false,
+					llmCommandApprovalAutoApproveCommands: llmCommandApprovalAutoApproveCommands ?? false,
+					llmCommandApprovalAutoDenyCommands: llmCommandApprovalAutoDenyCommands ?? false,
+					llmCommandApprovalInstructions: llmCommandApprovalInstructions ?? "",
 					alwaysAllowMcp,
 					alwaysAllowModeSwitch,
 					allowedCommands: allowedCommands ?? [],
 					deniedCommands: deniedCommands ?? [],
+					deniedCommandMessages: deniedCommandMessages ?? {},
 					// Note that we use `null` instead of `undefined` since `JSON.stringify`
 					// will omit `undefined` when serializing the object and passing it to the
 					// extension host. We may need to do the same for other nullable fields.
@@ -781,6 +795,14 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 								allowedMaxRequests={allowedMaxRequests ?? undefined}
 								allowedMaxCost={allowedMaxCost ?? undefined}
 								deniedCommands={deniedCommands}
+								deniedCommandMessages={deniedCommandMessages}
+								llmCommandApprovalEnabled={llmCommandApprovalEnabled}
+								llmCommandApprovalProfileId={llmCommandApprovalProfileId}
+								llmCommandApprovalAutoApprove={llmCommandApprovalAutoApprove}
+								llmCommandApprovalAutoApproveCommands={llmCommandApprovalAutoApproveCommands}
+								llmCommandApprovalAutoDenyCommands={llmCommandApprovalAutoDenyCommands}
+								llmCommandApprovalInstructions={llmCommandApprovalInstructions}
+								listApiConfigMeta={listApiConfigMeta}
 								setCachedStateField={setCachedStateField}
 							/>
 						)}

@@ -11,7 +11,7 @@ import { ClineAskResponse } from "../../shared/WebviewMessage"
 
 import { isWriteToolAction, isReadOnlyToolAction } from "./tools"
 import { isMcpToolAlwaysAllowed } from "./mcp"
-import { getCommandDecision } from "./commands"
+import { getCommandDecisionDetails } from "./commands"
 
 // We have auto-approval actions for different categories.
 export type AutoApprovalState =
@@ -33,10 +33,11 @@ export type AutoApprovalStateOptions =
 	| "mcpServers" // For `alwaysAllowMcp`.
 	| "allowedCommands" // For `alwaysAllowExecute`.
 	| "deniedCommands"
+	| "deniedCommandMessages"
 
 export type CheckAutoApprovalResult =
 	| { decision: "approve" }
-	| { decision: "deny" }
+	| { decision: "deny"; text?: string }
 	| { decision: "ask" }
 	| {
 			decision: "timeout"
@@ -117,12 +118,20 @@ export async function checkAutoApproval({
 		}
 
 		if (state.alwaysAllowExecute === true) {
-			const decision = getCommandDecision(text, state.allowedCommands || [], state.deniedCommands || [])
+			const decision = getCommandDecisionDetails(
+				text,
+				state.allowedCommands || [],
+				state.deniedCommands || [],
+				state.deniedCommandMessages,
+			)
 
-			if (decision === "auto_approve") {
+			if (decision.decision === "auto_approve") {
 				return { decision: "approve" }
-			} else if (decision === "auto_deny") {
-				return { decision: "deny" }
+			} else if (decision.decision === "auto_deny") {
+				const text = decision.denialMessage
+					? `The command was blocked because it matched the denied prefix "${decision.deniedPrefix}". Do not bypass this restriction by using another command. User guidance: ${decision.denialMessage}`
+					: undefined
+				return { decision: "deny", text }
 			} else {
 				return { decision: "ask" }
 			}

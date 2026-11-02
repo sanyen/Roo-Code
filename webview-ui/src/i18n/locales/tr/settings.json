@@ -260,6 +260,8 @@
 			"allowedCommands": "İzin Verilen Otomatik Yürütme Komutları",
 			"allowedCommandsDescription": "\"Yürütme işlemlerini her zaman onayla\" etkinleştirildiğinde otomatik olarak yürütülebilen komut önekleri. Tüm komutlara izin vermek için * ekleyin (dikkatli kullanın).",
 			"deniedCommands": "Reddedilen komutlar",
+			"deniedCommandMessageLabel": "{{command}} için mesaj",
+			"deniedCommandMessagePlaceholder": "Asistana bu komutun neden engellendiğini açıklayın ve bir alternatif önerin.",
 			"deniedCommandsDescription": "Onay istenmeden otomatik olarak reddedilecek komut önekleri. İzin verilen komutlarla çakışma durumunda, en uzun önek eşleşmesi öncelik alır. Tüm komutları reddetmek için * ekleyin.",
 			"commandPlaceholder": "Komut öneki girin (örn. 'git ')",
 			"deniedCommandPlaceholder": "Reddetmek için komut öneki girin (örn. 'rm -rf')",

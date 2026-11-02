@@ -125,6 +125,7 @@ import { processUserContentMentions } from "../mentions/processUserContentMentio
 import { getMessagesSinceLastSummary, summarizeConversation, getEffectiveApiHistory } from "../condense"
 import { MessageQueueService } from "../message-queue/MessageQueueService"
 import { AutoApprovalHandler, checkAutoApproval } from "../auto-approval"
+import { reviewCommand } from "../auto-approval/commandReview"
 import { MessageManager } from "../message-manager"
 import { validateAndFixToolResultIds } from "./validateToolResultIds"
 import { mergeConsecutiveApiMessages } from "./mergeConsecutiveApiMessages"
@@ -1318,12 +1319,45 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		// Automatically approve if the ask according to the user's settings.
 		const provider = this.providerRef.deref()
 		const state = provider ? await provider.getState() : undefined
-		const approval = await checkAutoApproval({ state, ask: type, text, isProtected })
+		let approval = await checkAutoApproval({ state, ask: type, text, isProtected })
+
+		if (type === "command" && approval.decision === "ask") {
+			const review = await this.reviewCommandApproval(text ?? "", state)
+
+			if (review) {
+				const shouldAutoApprove =
+					review.decision === "approve" &&
+					state?.llmCommandApprovalAutoApproveCommands === true &&
+					this.askResponse === undefined
+				const shouldAutoDeny =
+					review.decision === "deny" &&
+					state?.llmCommandApprovalAutoDenyCommands === true &&
+					this.askResponse === undefined
+				const commandMessage = this.findMessageByTimestamp(askTs)
+				if (commandMessage) {
+					commandMessage.commandReview = {
+						...review,
+						automatic: shouldAutoApprove || shouldAutoDeny,
+					}
+					await this.saveClineMessages()
+					await this.updateClineMessage(commandMessage)
+				}
+
+				if (shouldAutoApprove) {
+					approval = { decision: "approve" }
+				} else if (shouldAutoDeny) {
+					approval = {
+						decision: "deny",
+						text: t("tools:commandReview.denied", { explanation: review.explanation }),
+					}
+				}
+			}
+		}
 
 		if (approval.decision === "approve") {
 			this.approveAsk()
 		} else if (approval.decision === "deny") {
-			this.denyAsk()
+			this.denyAsk({ text: approval.text })
 		} else if (approval.decision === "timeout") {
 			// Store the auto-approval timeout so it can be cancelled if user interacts
 			this.autoApprovalTimeoutRef = setTimeout(() => {
@@ -1451,6 +1485,54 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 		this.emit(RooCodeEventName.TaskAskResponded)
 		return result
+	}
+
+	private async reviewCommandApproval(
+		command: string,
+		state: Awaited<ReturnType<ClineProvider["getState"]>> | undefined,
+	) {
+		if (!state?.llmCommandApprovalEnabled) {
+			return undefined
+		}
+
+		try {
+			if (!state.llmCommandApprovalProfileId) {
+				throw new Error(t("tools:commandReview.profileRequired"))
+			}
+			const profile = await this.providerRef.deref()?.providerSettingsManager.getProfile({
+				id: state.llmCommandApprovalProfileId,
+			})
+			if (!profile) {
+				throw new Error(t("tools:commandReview.profileUnavailable"))
+			}
+
+			const review = await reviewCommand({
+				apiConfiguration: profile,
+				command,
+				cwd: this.cwd,
+				instructions: state.llmCommandApprovalInstructions,
+				includeDecision: state.llmCommandApprovalAutoApprove === true,
+				taskId: this.taskId,
+				language: state.language,
+			})
+			if (state.llmCommandApprovalAutoApprove && !review.decision) {
+				throw new Error("The AI reviewer did not return a decision; manual approval is required.")
+			}
+			return review
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error)
+			console.error("AI command review failed:", error)
+			await this.say(
+				"error",
+				t("tools:commandReview.failed", { message }),
+				undefined,
+				undefined,
+				undefined,
+				undefined,
+				{ isNonInteractive: true },
+			)
+			return undefined
+		}
 	}
 
 	handleWebviewAskResponse(askResponse: ClineAskResponse, text?: string, images?: string[]) {

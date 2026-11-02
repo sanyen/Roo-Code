@@ -3,7 +3,12 @@ import { useEvent } from "react-use"
 import { t } from "i18next"
 import { ChevronDown, OctagonX } from "lucide-react"
 
-import { type ExtensionMessage, type CommandExecutionStatus, commandExecutionStatusSchema } from "@roo-code/types"
+import {
+	type ClineMessage,
+	type ExtensionMessage,
+	type CommandExecutionStatus,
+	commandExecutionStatusSchema,
+} from "@roo-code/types"
 
 import { safeJsonParse } from "@roo/core"
 import { COMMAND_OUTPUT_STRING } from "@roo/combineCommandSequences"
@@ -28,11 +33,12 @@ interface CommandPattern {
 interface CommandExecutionProps {
 	executionId: string
 	text?: string
+	commandReview?: ClineMessage["commandReview"]
 	icon?: JSX.Element | null
 	title?: JSX.Element | null
 }
 
-export const CommandExecution = ({ executionId, text, icon, title }: CommandExecutionProps) => {
+export const CommandExecution = ({ executionId, text, commandReview, icon, title }: CommandExecutionProps) => {
 	const {
 		terminalShellIntegrationDisabled = false,
 		allowedCommands = [],
@@ -204,6 +210,26 @@ export const CommandExecution = ({ executionId, text, icon, title }: CommandExec
 					<CodeBlock source={command} language="shell" />
 					<OutputContainer isExpanded={isExpanded} output={output} />
 				</div>
+				{commandReview && (
+					<div className="mx-2 mb-2 rounded-sm border border-vscode-panel-border bg-vscode-editor-background px-3 py-2 text-sm">
+						<div className="font-medium">
+							{commandReview.decision
+								? t(
+										commandReview.decision === "approve"
+											? commandReview.automatic
+												? "chat:commandExecution.aiAutoApproved"
+												: "chat:commandExecution.aiSuggestsApproval"
+											: commandReview.automatic
+												? "chat:commandExecution.aiAutoDenied"
+												: "chat:commandExecution.aiSuggestsDenial",
+									)
+								: t("chat:commandExecution.aiExplanation")}
+						</div>
+						<div className="mt-1 whitespace-pre-wrap text-vscode-descriptionForeground">
+							{commandReview.explanation}
+						</div>
+					</div>
+				)}
 				{command && command.trim() && (
 					<CommandPatternSelector
 						patterns={commandPatterns}

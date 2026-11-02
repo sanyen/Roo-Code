@@ -271,6 +271,13 @@ export const clineMessageSchema = z.object({
 	isProtected: z.boolean().optional(),
 	apiProtocol: z.union([z.literal("openai"), z.literal("anthropic")]).optional(),
 	isAnswered: z.boolean().optional(),
+	commandReview: z
+		.object({
+			explanation: z.string(),
+			decision: z.enum(["approve", "deny"]).optional(),
+			automatic: z.boolean().optional(),
+		})
+		.optional(),
 })
 
 export type ClineMessage = z.infer<typeof clineMessageSchema>

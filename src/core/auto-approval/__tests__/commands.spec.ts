@@ -1,4 +1,5 @@
-import { containsDangerousSubstitution, getCommandDecision } from "../commands"
+import { containsDangerousSubstitution, getCommandDecision, getCommandDecisionDetails } from "../commands"
+import { checkAutoApproval } from "../index"
 
 describe("containsDangerousSubstitution", () => {
 	describe("zsh array assignments (should NOT be flagged)", () => {
@@ -35,6 +36,51 @@ describe("getCommandDecision", () => {
 		const command = 'files=(a.ts b.ts); for f in "${files[@]}"; do echo "$f"; done'
 		const result = getCommandDecision(command, ["*"])
 		expect(result).toBe("auto_approve")
+	})
+})
+
+describe("getCommandDecisionDetails", () => {
+	it("returns custom guidance for the denylist prefix that blocks a command chain", () => {
+		expect(
+			getCommandDecisionDetails("git status && rm -rf /tmp", ["git"], ["rm"], {
+				rm: "Use the repository cleanup task instead.",
+			}),
+		).toEqual({
+			decision: "auto_deny",
+			deniedPrefix: "rm",
+			denialMessage: "Use the repository cleanup task instead.",
+		})
+	})
+
+	it("matches custom guidance case-insensitively", () => {
+		expect(getCommandDecisionDetails("GIT PUSH origin", [], ["Git Push"], { "git push": "Do not push." })).toEqual({
+			decision: "auto_deny",
+			deniedPrefix: "git push",
+			denialMessage: "Do not push.",
+		})
+	})
+})
+
+describe("auto-denial guidance", () => {
+	it("returns the configured guidance for the model when a command is denied", async () => {
+		const result = await checkAutoApproval({
+			state: {
+				autoApprovalEnabled: true,
+				alwaysAllowExecute: true,
+				allowedCommands: [],
+				deniedCommands: ["rm"],
+				deniedCommandMessages: { rm: "Use the repository cleanup task instead." },
+			},
+			ask: "command",
+			text: "rm -rf /tmp",
+		})
+
+		expect(result.decision).toBe("deny")
+		if (result.decision === "deny") {
+			expect(result.text).toContain('denied prefix "rm"')
+			expect(result.text).toContain("Do not bypass this restriction")
+			expect(result.text).toContain("Use the repository cleanup task instead.")
+		}
 	})
 })
 

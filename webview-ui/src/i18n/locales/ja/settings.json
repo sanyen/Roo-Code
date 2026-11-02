@@ -260,6 +260,8 @@
 			"allowedCommands": "許可された自動実行コマンド",
 			"allowedCommandsDescription": "「実行操作を常に承認」が有効な場合に自動実行できるコマンドプレフィックス。すべてのコマンドを許可するには * を追加します（注意して使用してください）。",
 			"deniedCommands": "拒否されたコマンド",
+			"deniedCommandMessageLabel": "{{command}} へのメッセージ",
+			"deniedCommandMessagePlaceholder": "このコマンドがブロックされている理由をアシスタントに伝え、代替案を提案してください。",
 			"deniedCommandsDescription": "承認を求めることなく自動的に拒否されるコマンドプレフィックス。許可されたコマンドとの競合がある場合、最長プレフィックスマッチが優先されます。すべてのコマンドを拒否するには * を追加します。",
 			"commandPlaceholder": "コマンドプレフィックスを入力（例：'git '）",
 			"deniedCommandPlaceholder": "拒否するコマンドプレフィックスを入力（例：'rm -rf'）",

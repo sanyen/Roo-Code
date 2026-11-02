@@ -39,14 +39,33 @@ export class AskFollowupQuestionTool extends BaseTool<"ask_followup_question"> {
 				return
 			}
 
-			// Transform follow_up suggestions to the format expected by task.ask
-			const follow_up_json = {
-				question,
-				suggest: follow_up.map((s) => ({ answer: s.text, mode: s.mode })),
+			task.consecutiveMistakeCount = 0
+			let text: string | undefined
+			let images: string[] | undefined
+
+			if (task.parentTaskId) {
+				const provider = task.providerRef.deref()
+				if (!provider) {
+					throw new Error("Provider reference lost while relaying subtask question")
+				}
+
+				text = await provider.answerSubtaskQuestion({
+					parentTaskId: task.parentTaskId,
+					childTaskId: task.taskId,
+					question,
+				})
+			} else {
+				// Transform follow_up suggestions to the format expected by task.ask
+				const follow_up_json = {
+					question,
+					suggest: follow_up.map((s) => ({ answer: s.text, mode: s.mode })),
+				}
+
+				const response = await task.ask("followup", JSON.stringify(follow_up_json), false)
+				text = response.text
+				images = response.images
 			}
 
-			task.consecutiveMistakeCount = 0
-			const { text, images } = await task.ask("followup", JSON.stringify(follow_up_json), false)
 			await task.say("user_feedback", text ?? "", images)
 			pushToolResult(formatResponse.toolResult(`<user_message>\n${text}\n</user_message>`, images))
 		} catch (error) {
@@ -55,6 +74,10 @@ export class AskFollowupQuestionTool extends BaseTool<"ask_followup_question"> {
 	}
 
 	override async handlePartial(task: Task, block: ToolUse<"ask_followup_question">): Promise<void> {
+		if (task.parentTaskId) {
+			return
+		}
+
 		const question: string | undefined = block.nativeArgs?.question ?? block.params.question
 
 		// During partial streaming, only show the question to avoid displaying raw JSON

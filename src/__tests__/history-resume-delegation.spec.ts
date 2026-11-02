@@ -44,6 +44,50 @@ describe("History resume delegation - parent metadata transitions", () => {
 		vi.clearAllMocks()
 	})
 
+	it("routes an active child's question through its awaiting parent and restores the child", async () => {
+		const child = {
+			taskId: "child-relay",
+			parentTaskId: "parent-relay",
+			getTaskMode: vi.fn().mockResolvedValue("debug"),
+		}
+		const parent = {
+			taskId: "parent-relay",
+			answerSubtaskQuestion: vi.fn().mockResolvedValue("Use the existing API client."),
+		}
+		let currentTask: any = child
+		const provider = {
+			getCurrentTask: vi.fn(() => currentTask),
+			getTaskWithId: vi.fn().mockResolvedValue({
+				historyItem: {
+					id: "parent-relay",
+					status: "delegated",
+					awaitingChildId: "child-relay",
+				},
+			}),
+			createTaskWithHistoryItem: vi.fn().mockImplementation(async (_historyItem, options) => {
+				expect(options).toEqual({ startTask: false, preserveCurrentTask: true })
+				currentTask = parent
+				return parent
+			}),
+			removeClineFromStack: vi.fn().mockImplementation(async () => {
+				currentTask = child
+			}),
+			handleModeSwitch: vi.fn().mockResolvedValue(undefined),
+		} as unknown as ClineProvider
+
+		const answer = await (ClineProvider.prototype as any).answerSubtaskQuestion.call(provider, {
+			parentTaskId: "parent-relay",
+			childTaskId: "child-relay",
+			question: "Which API client should I use?",
+		})
+
+		expect(answer).toBe("Use the existing API client.")
+		expect(parent.answerSubtaskQuestion).toHaveBeenCalledWith("Which API client should I use?")
+		expect(provider.removeClineFromStack).toHaveBeenCalledWith({ skipDelegationRepair: true })
+		expect(provider.handleModeSwitch).toHaveBeenCalledWith("debug")
+		expect(currentTask).toBe(child)
+	})
+
 	it("reopenParentFromDelegation persists parent metadata (delegated → active) before reopen", async () => {
 		const providerEmit = vi.fn()
 		const getTaskWithId = vi.fn().mockResolvedValue({
@@ -286,6 +330,81 @@ describe("History resume delegation - parent metadata transitions", () => {
 		expect(injectedMsg.role).toBe("user")
 		expect((injectedMsg.content[0] as any).type).toBe("tool_result")
 		expect((injectedMsg.content[0] as any).tool_use_id).toBe("toolu_abc123")
+	})
+
+	it("keeps a relayed-question tool_result and appends the child's completion after the parent answer", async () => {
+		const provider = {
+			contextProxy: { globalStorageUri: { fsPath: "/storage" } },
+			getTaskWithId: vi.fn().mockResolvedValue({
+				historyItem: {
+					id: "p-relay",
+					status: "delegated",
+					awaitingChildId: "c-relay",
+					childIds: ["c-relay"],
+					ts: 100,
+					task: "Parent with relayed question",
+					tokensIn: 0,
+					tokensOut: 0,
+					totalCost: 0,
+				},
+			}),
+			emit: vi.fn(),
+			getCurrentTask: vi.fn(() => ({ taskId: "c-relay" })),
+			removeClineFromStack: vi.fn().mockResolvedValue(undefined),
+			createTaskWithHistoryItem: vi.fn().mockResolvedValue({
+				taskId: "p-relay",
+				resumeAfterDelegation: vi.fn().mockResolvedValue(undefined),
+				overwriteClineMessages: vi.fn().mockResolvedValue(undefined),
+				overwriteApiConversationHistory: vi.fn().mockResolvedValue(undefined),
+			}),
+			updateTaskHistory: vi.fn().mockResolvedValue([]),
+		} as unknown as ClineProvider
+
+		const relayedAnswer = {
+			role: "user",
+			content: [
+				{
+					type: "tool_result",
+					tool_use_id: "toolu_relay",
+					content: "The subtask asks which API client to use.",
+				},
+			],
+			ts: 60,
+		}
+		const parentAnswer = {
+			role: "assistant",
+			content: [{ type: "text", text: "Use the existing API client." }],
+			ts: 70,
+		}
+		vi.mocked(readTaskMessages).mockResolvedValue([])
+		vi.mocked(readApiMessages).mockResolvedValue([
+			{
+				role: "assistant",
+				content: [{ type: "tool_use", name: "new_task", id: "toolu_relay", input: {} }],
+				ts: 50,
+			},
+			relayedAnswer,
+			parentAnswer,
+		] as any)
+
+		await (ClineProvider.prototype as any).reopenParentFromDelegation.call(provider, {
+			parentTaskId: "p-relay",
+			childTaskId: "c-relay",
+			completionResultSummary: "Subtask completed",
+		})
+
+		const savedMessages = vi.mocked(saveApiMessages).mock.calls[0][0].messages
+		expect(savedMessages[1]).toEqual(relayedAnswer)
+		expect(savedMessages[2]).toEqual(parentAnswer)
+		expect(savedMessages[3]).toMatchObject({
+			role: "user",
+			content: [
+				{
+					type: "text",
+					text: expect.stringContaining("Subtask c-relay completed"),
+				},
+			],
+		})
 	})
 
 	it("reopenParentFromDelegation injects plain text when no new_task tool_use exists in API history", async () => {

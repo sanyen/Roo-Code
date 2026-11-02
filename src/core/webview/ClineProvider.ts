@@ -824,7 +824,7 @@ export class ClineProvider
 
 	public async createTaskWithHistoryItem(
 		historyItem: HistoryItem & { rootTask?: Task; parentTask?: Task },
-		options?: { startTask?: boolean },
+		options?: { startTask?: boolean; preserveCurrentTask?: boolean },
 	) {
 		const isCliRuntime = process.env.ROO_CLI_RUNTIME === "1"
 		// CLI injects runtime provider settings from command flags/env at startup.
@@ -836,7 +836,7 @@ export class ClineProvider
 		const currentTask = this.getCurrentTask()
 		const isRehydratingCurrentTask = currentTask && currentTask.taskId === historyItem.id
 
-		if (!isRehydratingCurrentTask) {
+		if (!isRehydratingCurrentTask && !options?.preserveCurrentTask) {
 			await this.removeClineFromStack()
 		}
 
@@ -2503,6 +2503,41 @@ export class ClineProvider
 		return this.clineStack[this.clineStack.length - 1]
 	}
 
+	public async answerSubtaskQuestion(params: {
+		parentTaskId: string
+		childTaskId: string
+		question: string
+	}): Promise<string> {
+		const { parentTaskId, childTaskId, question } = params
+		const child = this.getCurrentTask()
+		if (!child || child.taskId !== childTaskId || child.parentTaskId !== parentTaskId) {
+			throw new Error(`Cannot relay question: subtask ${childTaskId} is not the active child of ${parentTaskId}`)
+		}
+
+		const { historyItem } = await this.getTaskWithId(parentTaskId)
+		if (historyItem.status !== "delegated" || historyItem.awaitingChildId !== childTaskId) {
+			throw new Error(`Cannot relay question: parent task ${parentTaskId} is not awaiting subtask ${childTaskId}`)
+		}
+
+		const childMode = await child.getTaskMode()
+		const parent = await this.createTaskWithHistoryItem(historyItem, {
+			startTask: false,
+			preserveCurrentTask: true,
+		})
+
+		try {
+			return await parent.answerSubtaskQuestion(question)
+		} finally {
+			if (this.getCurrentTask() === parent) {
+				await this.removeClineFromStack({ skipDelegationRepair: true })
+			}
+
+			if (this.getCurrentTask() === child) {
+				await this.handleModeSwitch(childMode)
+			}
+		}
+	}
+
 	public getRecentTasks(): string[] {
 		if (this.recentTasksCache) {
 			return this.recentTasksCache
@@ -3002,23 +3037,41 @@ export class ClineProvider
 		// inject a matching tool_result for the Anthropic message contract:
 		// user → assistant (tool_use) → user (tool_result)
 		if (toolUseId) {
-			// Check if the last message is already a user message with a tool_result for this tool_use_id
-			// (in case this is a retry or the history was already updated)
-			const lastMsg = parentApiMessages[parentApiMessages.length - 1]
-			let alreadyHasToolResult = false
-			if (lastMsg?.role === "user" && Array.isArray(lastMsg.content)) {
-				for (const block of lastMsg.content) {
-					if (block.type === "tool_result" && block.tool_use_id === toolUseId) {
-						// Update the existing tool_result content
-						block.content = `Subtask ${childTaskId} completed.\n\nResult:\n${completionResultSummary}`
-						alreadyHasToolResult = true
-						break
-					}
-				}
-			}
+			const existingToolResultMessageIndex = parentApiMessages.findIndex(
+				(message) =>
+					message.role === "user" &&
+					Array.isArray(message.content) &&
+					message.content.some(
+						(block: { type: string; tool_use_id?: string }) =>
+							block.type === "tool_result" && block.tool_use_id === toolUseId,
+					),
+			)
 
-			// If no existing tool_result found, create a NEW user message with the tool_result
-			if (!alreadyHasToolResult) {
+			if (existingToolResultMessageIndex !== -1) {
+				const existingToolResultMessage = parentApiMessages[existingToolResultMessageIndex]
+				const hasAssistantResponseAfterToolResult = parentApiMessages
+					.slice(existingToolResultMessageIndex + 1)
+					.some((message) => message.role === "assistant")
+
+				if (!hasAssistantResponseAfterToolResult) {
+					const existingToolResult = existingToolResultMessage.content.find(
+						(block: { type: string; tool_use_id?: string }) =>
+							block.type === "tool_result" && block.tool_use_id === toolUseId,
+					)
+					existingToolResult.content = `Subtask ${childTaskId} completed.\n\nResult:\n${completionResultSummary}`
+				} else {
+					parentApiMessages.push({
+						role: "user",
+						content: [
+							{
+								type: "text" as const,
+								text: `Subtask ${childTaskId} completed.\n\nResult:\n${completionResultSummary}`,
+							},
+						],
+						ts,
+					})
+				}
+			} else {
 				parentApiMessages.push({
 					role: "user",
 					content: [

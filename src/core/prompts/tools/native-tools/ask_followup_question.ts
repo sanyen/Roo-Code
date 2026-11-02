@@ -1,6 +1,6 @@
 import type OpenAI from "openai"
 
-const ASK_FOLLOWUP_QUESTION_DESCRIPTION = `Ask the user a question to gather additional information needed to complete the task. Use when you need clarification or more details to proceed effectively.
+const ASK_FOLLOWUP_QUESTION_DESCRIPTION = `Ask a question to gather additional information needed to complete the task. Use when you need clarification or more details to proceed effectively. In a delegated subtask, the parent agent will answer the question and return its response to you.
 
 Parameters:
 - question: (required) A clear, specific question addressing the information needed

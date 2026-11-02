@@ -111,6 +111,40 @@ describe("askFollowupQuestionTool", () => {
 		)
 	})
 
+	it("routes subtask questions through the parent agent", async () => {
+		const answerSubtaskQuestion = vi.fn().mockResolvedValue("Use the existing API client.")
+		mockCline.taskId = "child-task"
+		mockCline.parentTaskId = "parent-task"
+		mockCline.providerRef = { deref: () => ({ answerSubtaskQuestion }) }
+
+		const block: ToolUse<"ask_followup_question"> = {
+			type: "tool_use",
+			name: "ask_followup_question",
+			params: { question: "Which API client should I use?" },
+			nativeArgs: {
+				question: "Which API client should I use?",
+				follow_up: [{ text: "The existing client" }],
+			},
+			partial: false,
+		}
+
+		await askFollowupQuestionTool.handle(mockCline, block, {
+			askApproval: vi.fn(),
+			handleError: vi.fn(),
+			pushToolResult: mockPushToolResult,
+		})
+
+		expect(answerSubtaskQuestion).toHaveBeenCalledWith({
+			parentTaskId: "parent-task",
+			childTaskId: "child-task",
+			question: "Which API client should I use?",
+		})
+		expect(mockCline.ask).not.toHaveBeenCalled()
+		expect(mockPushToolResult).toHaveBeenCalledWith(
+			expect.stringContaining("<user_message>\nUse the existing API client.\n</user_message>"),
+		)
+	})
+
 	describe("parameter validation", () => {
 		it("should handle missing follow_up parameter", async () => {
 			const block: ToolUse = {
@@ -236,6 +270,24 @@ describe("askFollowupQuestionTool", () => {
 			})
 
 			expect(mockCline.ask).toHaveBeenCalledWith("followup", "Choose wisely", true)
+		})
+
+		it("does not show a subtask question directly to the user while it is being routed", async () => {
+			mockCline.parentTaskId = "parent-task"
+			const block: ToolUse<"ask_followup_question"> = {
+				type: "tool_use",
+				name: "ask_followup_question",
+				params: { question: "Which API client should I use?" },
+				partial: true,
+			}
+
+			await askFollowupQuestionTool.handle(mockCline, block, {
+				askApproval: vi.fn(),
+				handleError: vi.fn(),
+				pushToolResult: mockPushToolResult,
+			})
+
+			expect(mockCline.ask).not.toHaveBeenCalled()
 		})
 	})
 

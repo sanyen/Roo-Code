@@ -312,6 +312,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	private askResponseImages?: string[]
 	public lastMessageTs?: number
 	private autoApprovalTimeoutRef?: NodeJS.Timeout
+	private answeringSubtaskQuestion = false
+	private subtaskQuestionAnswer?: string
 
 	// Tool Use
 	consecutiveMistakeCount: number = 0
@@ -2504,6 +2506,78 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		await this.initiateTaskLoop([])
 	}
 
+	public async answerSubtaskQuestion(question: string): Promise<string> {
+		if (this.answeringSubtaskQuestion) {
+			throw new Error(`Task ${this.taskId} is already answering a subtask question`)
+		}
+
+		this.abort = false
+		this.abandoned = false
+		this.abortReason = undefined
+		this.didFinishAbortingStream = false
+		this.isStreaming = false
+		this.isWaitingForFirstChunk = false
+		this.isInitialized = true
+		this.skipPrevResponseIdOnce = true
+		this.answeringSubtaskQuestion = true
+		this.subtaskQuestionAnswer = undefined
+
+		try {
+			this.clineMessages = await this.getSavedClineMessages()
+			this.apiConversationHistory = await this.getSavedApiConversationHistory()
+
+			const requestText = [
+				"A delegated subtask needs your help. Answer its question directly using the context in this task.",
+				"Do not use tools or ask the user; your response will be sent back to the subtask.",
+				"",
+				`Subtask question: ${question}`,
+			].join("\n")
+
+			await this.say("user_feedback", requestText)
+
+			let newTaskToolUseId: string | undefined
+			for (let i = this.apiConversationHistory.length - 1; i >= 0 && !newTaskToolUseId; i--) {
+				const message = this.apiConversationHistory[i]
+				if (message.role === "assistant" && Array.isArray(message.content)) {
+					newTaskToolUseId = message.content.find(
+						(block): block is Anthropic.ToolUseBlockParam =>
+							block.type === "tool_use" && block.name === "new_task",
+					)?.id
+				}
+			}
+
+			if (newTaskToolUseId) {
+				await this.addToApiConversationHistory({
+					role: "user",
+					content: [
+						{
+							type: "tool_result",
+							tool_use_id: newTaskToolUseId,
+							content: `The subtask is still in progress and requests your guidance:\n\n${question}`,
+						},
+					],
+				})
+				await this.initiateTaskLoop([])
+			} else {
+				await this.initiateTaskLoop([{ type: "text", text: `<user_message>\n${requestText}\n</user_message>` }])
+			}
+
+			const answer = this.getSubtaskQuestionAnswer()?.trim()
+			if (!answer) {
+				throw new Error(`Parent task ${this.taskId} did not return a text answer to the subtask question`)
+			}
+
+			return answer
+		} finally {
+			this.answeringSubtaskQuestion = false
+			this.subtaskQuestionAnswer = undefined
+		}
+	}
+
+	private getSubtaskQuestionAnswer(): string | undefined {
+		return this.subtaskQuestionAnswer
+	}
+
 	// Task Loop
 
 	private async initiateTaskLoop(userContent: Anthropic.Messages.ContentBlockParam[]): Promise<void> {
@@ -3565,6 +3639,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					)
 
 					if (!didToolUse) {
+						if (this.answeringSubtaskQuestion) {
+							this.subtaskQuestionAnswer = assistantMessage
+							return true
+						}
+
 						// Increment consecutive no-tool-use counter
 						this.consecutiveNoToolUseCount++
 
@@ -4220,7 +4299,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			allowedFunctionNames = toolsResult.allowedFunctionNames
 		}
 
-		const shouldIncludeTools = allTools.length > 0
+		const shouldIncludeTools = allTools.length > 0 && !this.answeringSubtaskQuestion
 
 		const metadata: ApiHandlerCreateMessageMetadata = {
 			mode: mode,

@@ -10,7 +10,7 @@
 	"unknownToolError": "Roo tried to use an unknown tool: \"{{toolName}}\". Retrying...",
 	"commandReview": {
 		"result": "AI command review{{decisionLabel}}: {{explanation}}",
-		"denied": "The AI reviewer denied this command. Review the explanation and choose a safer alternative.",
+		"denied": "The AI reviewer denied this command: {{explanation}}",
 		"failed": "AI command review failed. The command still requires your approval. {{message}}",
 		"profileRequired": "Select an API profile for AI command review.",
 		"profileUnavailable": "The selected AI command review profile is unavailable."

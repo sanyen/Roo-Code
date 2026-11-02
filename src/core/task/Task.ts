@@ -1325,27 +1325,31 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			const review = await this.reviewCommandApproval(text ?? "", state)
 
 			if (review) {
-				await this.say(
-					"text",
-					t("tools:commandReview.result", {
-						decisionLabel: review.decision ? ` (${review.decision})` : "",
-						explanation: review.explanation,
-					}),
-					undefined,
-					undefined,
-					undefined,
-					undefined,
-					{ isNonInteractive: true },
-				)
+				const shouldAutoApprove =
+					review.decision === "approve" &&
+					state?.llmCommandApprovalAutoApproveCommands === true &&
+					this.askResponse === undefined
+				const shouldAutoDeny =
+					review.decision === "deny" &&
+					state?.llmCommandApprovalAutoDenyCommands === true &&
+					this.askResponse === undefined
+				const commandMessage = this.findMessageByTimestamp(askTs)
+				if (commandMessage) {
+					commandMessage.commandReview = {
+						...review,
+						automatic: shouldAutoApprove || shouldAutoDeny,
+					}
+					await this.saveClineMessages()
+					await this.updateClineMessage(commandMessage)
+				}
 
-				if (state?.llmCommandApprovalAutoApprove && review.decision && this.askResponse === undefined) {
-					approval =
-						review.decision === "approve"
-							? { decision: "approve" }
-							: {
-									decision: "deny",
-									text: t("tools:commandReview.denied"),
-								}
+				if (shouldAutoApprove) {
+					approval = { decision: "approve" }
+				} else if (shouldAutoDeny) {
+					approval = {
+						decision: "deny",
+						text: t("tools:commandReview.denied", { explanation: review.explanation }),
+					}
 				}
 			}
 		}

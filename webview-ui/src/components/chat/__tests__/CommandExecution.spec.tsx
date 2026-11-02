@@ -109,6 +109,26 @@ describe("CommandExecution", () => {
 		expect(selector).toHaveTextContent("npm install express")
 	})
 
+	it("shows the AI review below the command and above the auto-approved commands accordion", () => {
+		render(
+			<ExtensionStateWrapper>
+				<CommandExecution
+					executionId="test-review"
+					text="rm -rf build"
+					commandReview={{
+						decision: "deny",
+						explanation: "This deletes the build directory.",
+					}}
+				/>
+			</ExtensionStateWrapper>,
+		)
+
+		expect(screen.getByText("This deletes the build directory.")).toBeInTheDocument()
+		const review = screen.getByText("This deletes the build directory.")
+		const selector = screen.getByTestId("command-pattern-selector")
+		expect(review.compareDocumentPosition(selector) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+	})
+
 	it("should handle allow command change", () => {
 		render(
 			<ExtensionStateWrapper>

@@ -156,6 +156,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		llmCommandApprovalEnabled,
 		llmCommandApprovalProfileId,
 		llmCommandApprovalAutoApprove,
+		llmCommandApprovalAutoApproveCommands,
+		llmCommandApprovalAutoDenyCommands,
 		llmCommandApprovalInstructions,
 		language,
 		alwaysAllowExecute,
@@ -365,6 +367,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					llmCommandApprovalEnabled: llmCommandApprovalEnabled ?? false,
 					llmCommandApprovalProfileId: llmCommandApprovalProfileId ?? "",
 					llmCommandApprovalAutoApprove: llmCommandApprovalAutoApprove ?? false,
+					llmCommandApprovalAutoApproveCommands: llmCommandApprovalAutoApproveCommands ?? false,
+					llmCommandApprovalAutoDenyCommands: llmCommandApprovalAutoDenyCommands ?? false,
 					llmCommandApprovalInstructions: llmCommandApprovalInstructions ?? "",
 					alwaysAllowMcp,
 					alwaysAllowModeSwitch,
@@ -795,6 +799,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 								llmCommandApprovalEnabled={llmCommandApprovalEnabled}
 								llmCommandApprovalProfileId={llmCommandApprovalProfileId}
 								llmCommandApprovalAutoApprove={llmCommandApprovalAutoApprove}
+								llmCommandApprovalAutoApproveCommands={llmCommandApprovalAutoApproveCommands}
+								llmCommandApprovalAutoDenyCommands={llmCommandApprovalAutoDenyCommands}
 								llmCommandApprovalInstructions={llmCommandApprovalInstructions}
 								listApiConfigMeta={listApiConfigMeta}
 								setCachedStateField={setCachedStateField}

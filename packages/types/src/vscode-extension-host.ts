@@ -236,6 +236,8 @@ export type ExtensionState = Pick<
 	| "llmCommandApprovalEnabled"
 	| "llmCommandApprovalProfileId"
 	| "llmCommandApprovalAutoApprove"
+	| "llmCommandApprovalAutoApproveCommands"
+	| "llmCommandApprovalAutoDenyCommands"
 	| "llmCommandApprovalInstructions"
 	| "alwaysAllowReadOnly"
 	| "alwaysAllowReadOnlyOutsideWorkspace"

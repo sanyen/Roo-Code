@@ -40,6 +40,8 @@ type AutoApproveSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	llmCommandApprovalEnabled?: boolean
 	llmCommandApprovalProfileId?: string
 	llmCommandApprovalAutoApprove?: boolean
+	llmCommandApprovalAutoApproveCommands?: boolean
+	llmCommandApprovalAutoDenyCommands?: boolean
 	llmCommandApprovalInstructions?: string
 	listApiConfigMeta?: ProviderSettingsEntry[]
 	setCachedStateField: SetCachedStateField<
@@ -62,6 +64,8 @@ type AutoApproveSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "llmCommandApprovalEnabled"
 		| "llmCommandApprovalProfileId"
 		| "llmCommandApprovalAutoApprove"
+		| "llmCommandApprovalAutoApproveCommands"
+		| "llmCommandApprovalAutoDenyCommands"
 		| "llmCommandApprovalInstructions"
 	>
 }
@@ -86,6 +90,8 @@ export const AutoApproveSettings = ({
 	llmCommandApprovalEnabled,
 	llmCommandApprovalProfileId,
 	llmCommandApprovalAutoApprove,
+	llmCommandApprovalAutoApproveCommands,
+	llmCommandApprovalAutoDenyCommands,
 	llmCommandApprovalInstructions,
 	listApiConfigMeta = [],
 	setCachedStateField,
@@ -235,21 +241,64 @@ export const AutoApproveSettings = ({
 						</SearchableSetting>
 
 						<SearchableSetting
-							settingId="llm-command-review-auto-approve"
+							settingId="llm-command-review-approval-enabled"
 							section="autoApprove"
-							label={t("settings:autoApprove.llm.autoApprove")}>
+							label={t("settings:autoApprove.llm.allowDecision")}>
 							<VSCodeCheckbox
 								checked={llmCommandApprovalAutoApprove ?? false}
 								disabled={!llmCommandApprovalEnabled}
 								onChange={(event: any) =>
 									setCachedStateField("llmCommandApprovalAutoApprove", event.target.checked)
 								}>
-								<span className="font-medium">{t("settings:autoApprove.llm.autoApprove")}</span>
+								<span className="font-medium">{t("settings:autoApprove.llm.allowDecision")}</span>
 							</VSCodeCheckbox>
 							<p className="text-vscode-descriptionForeground text-sm mt-1">
-								{t("settings:autoApprove.llm.autoApproveDescription")}
+								{t("settings:autoApprove.llm.allowDecisionDescription")}
 							</p>
 						</SearchableSetting>
+
+						{llmCommandApprovalAutoApprove && (
+							<div className="ml-3 flex flex-col gap-3 border-l-2 border-vscode-button-background pl-3">
+								<SearchableSetting
+									settingId="llm-command-review-auto-approve"
+									section="autoApprove"
+									label={t("settings:autoApprove.llm.autoApprove")}>
+									<VSCodeCheckbox
+										checked={llmCommandApprovalAutoApproveCommands ?? false}
+										disabled={!llmCommandApprovalEnabled}
+										onChange={(event: any) =>
+											setCachedStateField(
+												"llmCommandApprovalAutoApproveCommands",
+												event.target.checked,
+											)
+										}>
+										<span className="font-medium">{t("settings:autoApprove.llm.autoApprove")}</span>
+									</VSCodeCheckbox>
+									<p className="text-vscode-descriptionForeground text-sm mt-1">
+										{t("settings:autoApprove.llm.autoApproveDescription")}
+									</p>
+								</SearchableSetting>
+								<SearchableSetting
+									settingId="llm-command-review-auto-deny"
+									section="autoApprove"
+									label={t("settings:autoApprove.llm.autoDeny")}>
+									<VSCodeCheckbox
+										checked={llmCommandApprovalAutoDenyCommands ?? false}
+										disabled={!llmCommandApprovalEnabled}
+										onChange={(event: any) =>
+											setCachedStateField(
+												"llmCommandApprovalAutoDenyCommands",
+												event.target.checked,
+											)
+										}>
+										<span className="font-medium">{t("settings:autoApprove.llm.autoDeny")}</span>
+									</VSCodeCheckbox>
+									<p className="text-vscode-descriptionForeground text-sm mt-1">
+										{t("settings:autoApprove.llm.autoDenyDescription")}
+									</p>
+								</SearchableSetting>
+							</div>
+						)}
 
 						<SearchableSetting
 							settingId="llm-command-review-instructions"

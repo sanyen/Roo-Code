@@ -67,7 +67,7 @@ import { generateSystemPrompt } from "./generateSystemPrompt"
 import { resolveDefaultSaveUri, saveLastExportPath } from "../../utils/export"
 import { getCommand } from "../../utils/commands"
 
-const ALLOWED_VSCODE_SETTINGS = new Set(["terminal.integrated.inheritEnv"])
+const ALLOWED_VSCODE_SETTINGS = new Set(["terminal.integrated.inheritEnv", "roo-cline.commitMessageApiConfig"])
 
 import { setPendingTodoList } from "../tools/UpdateTodoListTool"
 import {
@@ -640,7 +640,12 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 				for (const [key, value] of Object.entries(message.updatedSettings)) {
 					let newValue = value
 
-					if (key === "language") {
+					if (key === "commitMessageApiConfig") {
+						await vscode.workspace
+							.getConfiguration(Package.name)
+							.update("commitMessageApiConfig", value, vscode.ConfigurationTarget.Global)
+						continue
+					} else if (key === "language") {
 						newValue = value ?? "en"
 						changeLanguage(newValue as Language)
 					} else if (key === "allowedCommands") {

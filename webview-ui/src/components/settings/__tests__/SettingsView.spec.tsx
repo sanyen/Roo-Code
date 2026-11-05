@@ -55,6 +55,12 @@ vi.mock("@vscode/webview-ui-toolkit/react", () => ({
 			data-testid={dataTestId}
 		/>
 	),
+	VSCodeDropdown: ({ children, value, onChange, "data-testid": dataTestId }: any) => (
+		<select value={value} onChange={onChange} data-testid={dataTestId}>
+			{children}
+		</select>
+	),
+	VSCodeOption: ({ children, value }: any) => <option value={value}>{children}</option>,
 	VSCodeLink: ({ children, href }: any) => <a href={href || "#"}>{children}</a>,
 	VSCodeRadio: ({ value, checked, onChange }: any) => (
 		<input type="radio" value={value} checked={checked} onChange={onChange} />
@@ -287,7 +293,7 @@ const mockPostMessage = (state: any) => {
 	)
 }
 
-const renderSettingsView = () => {
+const renderSettingsView = (initialState: Record<string, unknown> = {}) => {
 	const onDone = vi.fn()
 	const queryClient = new QueryClient()
 
@@ -300,7 +306,7 @@ const renderSettingsView = () => {
 	)
 
 	// Hydrate initial state.
-	mockPostMessage({})
+	mockPostMessage(initialState)
 
 	// Helper function to activate a tab and ensure its content is visible
 	const activateTab = (tabId: string) => {

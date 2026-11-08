@@ -294,6 +294,7 @@ export type ExtensionState = Pick<
 	| "disabledTools"
 > & {
 	lockApiConfigAcrossModes?: boolean
+	commitMessageApiConfig?: string
 	version: string
 	clineMessages: ClineMessage[]
 	currentTaskId?: string
@@ -622,7 +623,7 @@ export interface WebviewMessage {
 		codebaseIndexVercelAiGatewayApiKey?: string
 		codebaseIndexOpenRouterApiKey?: string
 	}
-	updatedSettings?: RooCodeSettings
+	updatedSettings?: RooCodeSettings & { commitMessageApiConfig?: string }
 	/** Task configuration applied via `createTask()`. */
 	taskConfiguration?: RooCodeSettings
 	// Worktree properties

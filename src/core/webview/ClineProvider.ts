@@ -2270,6 +2270,9 @@ export class ClineProvider
 			imageGenerationProvider: stateValues.imageGenerationProvider,
 			openRouterImageApiKey: stateValues.openRouterImageApiKey,
 			openRouterImageGenerationSelectedModel: stateValues.openRouterImageGenerationSelectedModel,
+			commitMessageApiConfig: vscode.workspace
+				.getConfiguration(Package.name)
+				.get<string>("commitMessageApiConfig", ""),
 		}
 	}
 

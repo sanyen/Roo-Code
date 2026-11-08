@@ -12,6 +12,7 @@ import { handleNewTask } from "./handleTask"
 import { CodeIndexManager } from "../services/code-index/manager"
 import { importSettingsWithFeedback } from "../core/config/importExport"
 import { t } from "../i18n"
+import { registerCommitMessageCommand } from "./registerCommitMessage"
 
 /**
  * Helper to get the visible ClineProvider instance or log if not found.
@@ -61,6 +62,8 @@ export type RegisterCommandOptions = {
 
 export const registerCommands = (options: RegisterCommandOptions) => {
 	const { context } = options
+
+	context.subscriptions.push(registerCommitMessageCommand(options))
 
 	for (const [id, callback] of Object.entries(getCommandsMap(options))) {
 		const command = getCommand(id as CommandId)

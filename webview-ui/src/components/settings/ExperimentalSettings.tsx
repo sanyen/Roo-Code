@@ -1,28 +1,33 @@
 import { HTMLAttributes } from "react"
 
-import type { Experiments, ImageGenerationProvider } from "@roo-code/types"
+import type { Experiments, ImageGenerationProvider, ProviderSettingsEntry } from "@roo-code/types"
 
 import { EXPERIMENT_IDS, experimentConfigsMap } from "@roo/experiments"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { cn } from "@src/lib/utils"
 
-import { SetExperimentEnabled } from "./types"
+import { SetCachedStateField, SetExperimentEnabled } from "./types"
 import { SectionHeader } from "./SectionHeader"
 import { Section } from "./Section"
 import { SearchableSetting } from "./SearchableSetting"
 import { ExperimentalFeature } from "./ExperimentalFeature"
 import { ImageGenerationSettings } from "./ImageGenerationSettings"
+import { CommitMessageSettings } from "./CommitMessageSettings"
 import { CustomToolsSettings } from "./CustomToolsSettings"
 
 type ExperimentalSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	experiments: Experiments
+	commitMessageApiConfig?: string
 	setExperimentEnabled: SetExperimentEnabled
+	setCachedStateField: SetCachedStateField<"commitMessageApiConfig">
 	apiConfiguration?: any
 	setApiConfigurationField?: any
 	imageGenerationProvider?: ImageGenerationProvider
 	openRouterImageApiKey?: string
 	openRouterImageGenerationSelectedModel?: string
+	currentApiConfigName?: string
+	listApiConfigMeta?: ProviderSettingsEntry[]
 	setImageGenerationProvider?: (provider: ImageGenerationProvider) => void
 	setOpenRouterImageApiKey?: (apiKey: string) => void
 	setImageGenerationSelectedModel?: (model: string) => void
@@ -30,12 +35,16 @@ type ExperimentalSettingsProps = HTMLAttributes<HTMLDivElement> & {
 
 export const ExperimentalSettings = ({
 	experiments,
+	commitMessageApiConfig,
 	setExperimentEnabled,
+	setCachedStateField,
 	apiConfiguration,
 	setApiConfigurationField,
 	imageGenerationProvider,
 	openRouterImageApiKey,
 	openRouterImageGenerationSelectedModel,
+	currentApiConfigName,
+	listApiConfigMeta,
 	setImageGenerationProvider,
 	setOpenRouterImageApiKey,
 	setImageGenerationSelectedModel,
@@ -49,6 +58,19 @@ export const ExperimentalSettings = ({
 			<SectionHeader>{t("settings:sections.experimental")}</SectionHeader>
 
 			<Section>
+				<SearchableSetting
+					key="experimental-commit-message-model"
+					settingId="experimental-commit-message-model"
+					section="experimental"
+					label={t("settings:experimental.commitMessage.name")}>
+					<CommitMessageSettings
+						commitMessageApiConfig={commitMessageApiConfig}
+						currentApiConfigName={currentApiConfigName}
+						listApiConfigMeta={listApiConfigMeta}
+						setCachedStateField={setCachedStateField}
+					/>
+				</SearchableSetting>
+
 				{Object.entries(experimentConfigsMap)
 					.filter(([key]) => key in EXPERIMENT_IDS)
 					.map((config) => {

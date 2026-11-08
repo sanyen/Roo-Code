@@ -836,6 +836,13 @@
 		}
 	},
 	"experimental": {
+		"commitMessage": {
+			"name": "Commit message generation",
+			"modelLabel": "Model",
+			"modelDescription": "Choose a saved API profile for commit message generation. Leave this set to the active profile to follow your current selection.",
+			"activeProfile": "Use active profile ({{profileName}})",
+			"activeProfileFallback": "Use active profile"
+		},
 		"DIFF_STRATEGY_UNIFIED": {
 			"name": "Use experimental unified diff strategy",
 			"description": "Enable the experimental unified diff strategy. This strategy might reduce the number of retries caused by model errors but may cause unexpected behavior or incorrect edits. Only enable if you understand the risks and are willing to carefully review all changes."

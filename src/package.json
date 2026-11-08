@@ -159,9 +159,21 @@
 				"command": "roo-cline.toggleAutoApprove",
 				"title": "%command.toggleAutoApprove.title%",
 				"category": "%configuration.title%"
+			},
+			{
+				"command": "roo-cline.generateCommitMessage",
+				"title": "%command.generateCommitMessage.title%",
+				"icon": "$(sparkle)"
 			}
 		],
 		"menus": {
+			"scm/title": [
+				{
+					"command": "roo-cline.generateCommitMessage",
+					"group": "navigation",
+					"when": "scmProvider == git"
+				}
+			],
 			"editor/context": [
 				{
 					"submenu": "roo-cline.contextMenu",
@@ -316,6 +328,11 @@
 					"type": "boolean",
 					"default": false,
 					"description": "%commands.preventCompletionWithOpenTodos.description%"
+				},
+				"roo-cline.commitMessageApiConfig": {
+					"type": "string",
+					"default": "",
+					"description": "%settings.commitMessageApiConfig.description%"
 				},
 				"roo-cline.vsCodeLmModelSelector": {
 					"type": "object",

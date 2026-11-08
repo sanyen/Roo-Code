@@ -201,6 +201,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		maxDiagnosticMessages,
 		includeTaskHistoryInEnhance,
 		imageGenerationProvider,
+		commitMessageApiConfig,
 		openRouterImageApiKey,
 		openRouterImageGenerationSelectedModel,
 		reasoningBlockCollapsed,
@@ -417,6 +418,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					includeCurrentTime: includeCurrentTime ?? true,
 					includeCurrentCost: includeCurrentCost ?? true,
 					maxGitStatusFiles: maxGitStatusFiles ?? 0,
+					commitMessageApiConfig: commitMessageApiConfig ?? "",
 					profileThresholds,
 					imageGenerationProvider,
 					openRouterImageApiKey,
@@ -908,7 +910,11 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 						{renderTab === "experimental" && (
 							<ExperimentalSettings
 								setExperimentEnabled={setExperimentEnabled}
+								setCachedStateField={setCachedStateField}
 								experiments={experiments}
+								commitMessageApiConfig={commitMessageApiConfig}
+								currentApiConfigName={currentApiConfigName}
+								listApiConfigMeta={listApiConfigMeta}
 								apiConfiguration={apiConfiguration}
 								setApiConfigurationField={setApiConfigurationField}
 								imageGenerationProvider={imageGenerationProvider}

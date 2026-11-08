@@ -14,6 +14,16 @@
 		"one": "One item",
 		"other": "{{count}} items"
 	},
+	"commit_message": {
+		"select_repository": "Select a Git repository",
+		"git_extension_missing": "The built-in Git extension is not available.",
+		"no_git_repositories": "No open Git repositories were found.",
+		"no_staged_changes": "Stage changes before generating a commit message.",
+		"api_configuration_missing": "No API configuration is available. Configure a Roo Code API profile first.",
+		"empty_response": "The configured model returned an empty commit message.",
+		"generated": "Commit message generated.",
+		"failed": "Failed to generate commit message: {{error}}"
+	},
 	"confirmation": {
 		"reset_state": "Are you sure you want to reset all state and secret storage in the extension? This cannot be undone.",
 		"delete_config_profile": "Are you sure you want to delete this configuration profile?",
